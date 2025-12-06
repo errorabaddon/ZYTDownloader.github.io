@@ -5,7 +5,7 @@
   <h1>Your App</h1>
   <p>Latest version: <span id="ver">loading…</span></p>
   <script>
-    fetch('/your-repo/version.json')
+    fetch('errorabaddon/ZYTDownloader.github.io/main/version.json')
       .then(r => r.json())
       .then(j => document.getElementById('ver').textContent = j.version)
       .catch(e => document.getElementById('ver').textContent = 'unknown');
