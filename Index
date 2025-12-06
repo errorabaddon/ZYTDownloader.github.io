@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Terminal</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: black;
+      height: 100%;
+      font-family: 'Courier New', Courier, monospace;
+      color: red;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .terminal {
+      background-color: black;
+      color: red;
+      border: 2px solid red;
+      padding: 20px;
+      width: 90vw;
+      max-width: 800px;
+      height: 80vh;
+      max-height: 600px;
+      display: flex;
+      flex-direction: column;
+      box-sizing: border-box;
+      z-index: 10;
+      position: relative;
+    }
+
+    .output {
+      flex: 1;
+      overflow-y: auto;
+      white-space: pre-wrap;
+    }
+
+    .input-area {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .welcome-screen {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: red;
+      background-color: black;
+      padding: 40px;
+      text-align: center;
+      border: 2px solid red;
+      font-family: monospace;
+      z-index: 5;
+    }
+
+    .welcome-screen button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      background-color: red;
+      border: none;
+      color: black;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    input {
+      flex: 1;
+      background-color: black;
+      color: red;
+      border: none;
+      font-size: 16px;
+      outline: none;
+    }
+
+    button {
+      background-color: black;
+      color: red;
+      border: 1px solid red;
+      padding: 5px 10px;
+      cursor: pointer;
+    }
+
+    #overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.9);
+      z-index: 30;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      display: flex;
+    }
+
+#tvContainer {
+  position: relative;
+  width: 90vw;
+  max-width: 680px;
+  aspect-ratio: 680 / 460; /* ✅ Match image shape */
+  margin: auto;
+  display: none; /* Hidden by default */
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+
+
+
+#tvVideo {
+  position: absolute;
+  top: 47%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 69.5%;
+  height: 59%;
+  z-index: 1;
+  border: none;
+  background: black;
+}
+
+
+#tvFrameImg {
+  width: 100%;
+  height: auto;
+  z-index: 2;
+  pointer-events: none;
+  user-select: none;
+  position: relative;
+}
+
+
+
+#returnBtn {
+  margin-top: 12px;
+  padding: 8px 16px;
+  font-size: 16px;
+  max-width: 80vw;
+  word-break: break-word;
+}
+
+
+@media (max-height: 500px) and (orientation: landscape) {
+  #tvContainer {
+    max-height: 70vh;
+    width: 95vw;
+  }
+
+  #returnBtn {
+    font-size: 14px;
+    padding: 6px 12px;
+  }
+}
+
+
+
+@media (max-width: 600px) {
+  #tvVideo {
+  width: 75%;
+  height: 75%;
+  top: 55%;
+}
+
+
+  #tvContainer {
+    width: 95vw;
+  }
+
+  #returnBtn {
+    font-size: 14px;
+    padding: 8px 16px;
+  }
+}
+
+
+    @media (max-width: 600px) {
+      .terminal {
+        width: 95vw;
+        height: 85vh;
+      }
+
+      #tvVideo {
+        width: 70%;
+        height: 70%;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="terminal" id="terminal">
+    <div class="output" id="output">Terminal initialized. Type 'help' for commands.</div>
+    <div class="input-area">
+      <span>&gt;</span>
+      <input type="text" id="codeInput" autofocus />
+      <button onclick="handleInput()">Enter</button>
+    </div>
+  </div>
+
+  <!-- Welcome Screen -->
+  <div class="welcome-screen" id="welcomeScreen">
+    <h1>Welcome to the Terminal</h1>
+    <p>Enter the terminal to begin your experience.</p>
+    <button onclick="enterTerminal()">Start using the terminal</button>
+  </div>
+
+  <!-- Video Overlay -->
+  <div id="overlay">
+    <div id="tvContainer">
+      <iframe id="tvVideo" src="" allowfullscreen></iframe>
+      <img id="tvFrameImg" src="https://errorabaddon.github.io/assets/images/ClassicTV.png" alt="TV Frame" />
+    </div>
+    <button id="closeOverlayBtn">Return to Terminal</button>
+  </div>
+
+  <!-- Audio -->
+  <audio id="bgMusic" src="assets/audio/bgmusic.mp3" loop></audio>
+  <audio id="errorSound" src="assets/audio/error.mp3" preload="auto"></audio>
+
+<script>
+  const videos = {
+    "bee.": "https://www.youtube.com/embed/3ZBzJO5oRMw?autoplay=1",
+    "abaddon": "https://www.youtube.com/embed/VbNpA7HE8Ps?autoplay=1",
+    "realasfuck": "https://www.youtube.com/embed/o5g-lUuFgpg?autoplay=1"
+  };
+
+  const output = document.getElementById("output");
+  const input = document.getElementById("codeInput");
+  const terminal = document.getElementById("terminal");
+  const overlay = document.getElementById("overlay");
+  const welcomeMessage = document.getElementById("welcomeScreen");
+  const tvVideo = document.getElementById("tvVideo");
+  const closeOverlayBtn = document.getElementById("closeOverlayBtn");
+  const errorSound = document.getElementById("errorSound");
+  const bgMusic = document.getElementById("bgMusic");
+
+  window.onload = () => {
+    bgMusic.volume = 0.3;
+    const playMusic = () => {
+      bgMusic.play().catch(() => {
+        log("Click or press Enter to start background music.");
+      });
+      window.removeEventListener('click', playMusic);
+      window.removeEventListener('keydown', playMusic);
+    };
+    window.addEventListener('click', playMusic);
+    window.addEventListener('keydown', playMusic);
+  };
+
+  function log(text) {
+    output.innerText += `\n> ${text}`;
+    output.scrollTop = output.scrollHeight;
+  }
+
+  function handleInput() {
+    const value = input.value.trim().toLowerCase();
+    if (!value) return;
+
+    log(value);
+    input.value = "";
+
+    switch (value) {
+      case "help":
+        log("Available commands:\n- help\n- clean\n- playbg\n- pausebg\n- stopvideo\n- showfiles\n- [video code]");
+        break;
+      case "showfiles":
+        log("Files/Assets/Videos\n- Files/Assets/Images\n- Files/Assets/Executables\n-");
+        break;
+      case "files/assets/videos":
+        log("[ Empty Folder ]");
+        break;
+      case "files/assets/images":
+        log("Me.png\n- James.png\n- RBxStuDio.png\n- Eye.png\n-");
+        break;
+      case "files/assets/executables":
+        log("Temp.rbxm\n- RobloxStudio.exe\n- AntiVirus.exe\n-");
+        break;
+      case "clean":
+        output.innerText = "Terminal cleared.";
+        break;
+      case "playbg":
+        bgMusic.volume = 0.3;
+        bgMusic.play();
+        log("Background music playing...");
+        break;
+      case "pausebg":
+        bgMusic.pause();
+        log("Background music paused.");
+        break;
+      case "stopvideo":
+        hideVideo();
+        log("Video stopped. Back to terminal.");
+        break;
+      default:
+        if (videos[value]) {
+          showVideoOverlay(videos[value]);
+          log(`Playing video for code: ${value}`);
+        } else {
+          errorSound.play();
+          log("Invalid code or command.");
+        }
+    }
+  }
+
+  function showVideoOverlay(url) {
+    tvVideo.src = url;
+    overlay.style.display = 'flex';
+    terminal.style.display = 'none';
+  }
+
+  function hideVideo() {
+    tvVideo.src = '';
+    overlay.style.display = 'none';
+    terminal.style.display = 'flex';
+  }
+
+  function enterTerminal() {
+    tvVideo.src = '';
+    welcomeMessage.style.display = 'none';
+    terminal.style.display = 'flex';
+  }
+
+  function hideTerminal() {
+    tvVideo.src = '';
+    welcomeMessage.style.display = 'flex';
+    terminal.style.display = 'none';
+    overlay.style.display = 'none';
+  }
+
+  closeOverlayBtn.onclick = hideVideo;
+
+  hideTerminal();
+
+  input.addEventListener("keypress", (e) => {
+    if (e.key === "Enter") {
+      handleInput();
+    }
+  });
+</script>
+</body>
+</html>
